@@ -33,7 +33,8 @@ async def health_check():
 
         pg_client = PostgresClient()
         query = text("SELECT count(datid) FROM pg_stat_activity;")
-        response = pg_client.db.session.execute(query).all()
+        with pg_client.SessionLocal() as session:
+            response = session.execute(query).all()
 
         logger.info("response: %s", response)
 
