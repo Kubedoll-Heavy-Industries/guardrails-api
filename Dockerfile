@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/python:3.12-slim
+FROM public.ecr.aws/docker/library/python:3.12-slim AS builder
 
 # Accept a build arg for the Guardrails token
 # We'll add this to the config using the configure command below
@@ -9,22 +9,40 @@ WORKDIR /app
 
 # print the version just to verify
 RUN python3 --version
-# start the virtual environment
-RUN python3 -m venv /opt/venv
-
-# Enable venv
-ENV PATH="/opt/venv/bin:$PATH"
 
 # Install some utilities; you may not need all of these
 RUN apt-get update
 RUN apt-get install -y git
 
-# Copy the requirements file
-COPY requirements*.txt .
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Install app dependencies
-# If you use Poetry this step might be different
-RUN pip install -r requirements-lock.txt
+ENV UV_COMPILE_BYTECODE=1
+
+COPY pyproject.toml uv.lock ./
+COPY README.md LICENSE MANIFEST.in setup.cfg setup.py ./
+COPY guardrails_api ./guardrails_api
+
+RUN uv sync --frozen --no-dev --no-editable
+
+
+FROM public.ecr.aws/docker/library/python:3.12-slim AS runtime
+
+# Accept a build arg for the Guardrails token
+# We'll add this to the config using the configure command below
+# ARG GUARDRAILS_TOKEN
+
+# Create app directory
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd --gid 65532 nonroot && \
+    useradd --uid 65532 --gid nonroot --shell /bin/false --create-home nonroot
+
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app /app
+
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Set the directory for nltk data
 ENV NLTK_DATA=/opt/nltk_data
@@ -41,6 +59,10 @@ RUN guardrails hub install hub://guardrails/valid_length
 # Copy the rest over
 # We use a .dockerignore to keep unwanted files exluded
 COPY . .
+
+RUN chown -R nonroot:nonroot /app
+
+USER nonroot
 
 EXPOSE 8000
 

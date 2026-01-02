@@ -14,14 +14,20 @@ jobs:
   build:
     name: PR checks
     runs-on: ubuntu-latest
+    env:
+      UV_VERSION: "0.5.11"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: 3.12.x
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -30,12 +36,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          python -m venv ./.venv
-          source ./.venv/bin/activate
           make build
-          make install-dev;
+          make install-dev
 
       - name: Run Quality Checks
-        run: |
-          source ./.venv/bin/activate
-          make qa;
+        run: make qa

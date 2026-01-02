@@ -7,16 +7,17 @@ authors = [
 ]
 license = {file = "LICENSE"}
 readme = "README.md"
-keywords = ["Guardrails", "Guardrails AI", "Guardrails API", "Guardrails API"]
-requires-python = ">= 3.8.1"
+keywords = ["Guardrails", "Guardrails AI", "Guardrails API"]
+requires-python = ">=3.10,<3.15"
 dependencies = [
-    "guardrails-ai>=0.5.12",
+    "guardrails-ai @ git+https://github.com/Kubedoll-Heavy-Industries/guardrails.git@80f3bf9aedf62932eb43ee4f092d8dd89d5d00c2",
     "jsonschema>=4.22.0,<5",
     "referencing>=0.35.1,<1",
     "boto3>=1.34.115,<2",
     "psycopg2-binary>=2.9.9,<3",
     "litellm>=1.39.3,<2",
-    "typer>=0.9.4,<1",
+    "openai>=2.8.0,<3",
+    "typer>=0.9.0,<0.22",
     "opentelemetry-api>=1.0.0,<2",
     "opentelemetry-sdk>=1.0.0,<2",
     "opentelemetry-exporter-otlp-proto-grpc>=1.0.0,<2",
@@ -41,8 +42,33 @@ dev = [
     "pytest",
     "coverage",
     "pytest-mock",
-    "gunicorn>=22.0.0,<23",
+    "gunicorn>=22.0.0,<24",
 ]
+
+
+# =============================================================================
+# Development Dependencies (PEP 735 dependency-groups)
+# =============================================================================
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.0",
+    "pytest>=8.3.0",
+    "pytest-mock>=3.14.0",
+    "coverage>=7.6.0",
+    "pre-commit>=4.0.0",
+    "ty>=0.0.0a5",
+    "nox>=2024.10.9",
+]
+
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "E501"]
+ignore = ["E731", "E203", "E741"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -53,6 +79,3 @@ testpaths = [
 pythonpath = [
     ".", "guardrails_api"
 ]
-
-[tool.pyright]
-include = ["guardrails_api"]
